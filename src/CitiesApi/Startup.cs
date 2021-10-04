@@ -10,6 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Prometheus;
+using System.IO;
+using System.Reflection;
 
 namespace CitiesApi
 {
@@ -29,8 +32,12 @@ namespace CitiesApi
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "CitiesApi", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Cities Api", Version = "v1" });
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
             });
+            services.AddHealthChecks();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -39,18 +46,31 @@ namespace CitiesApi
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CitiesApi v1"));
             }
-
+            app.UseCors("AllowOrigin");
             app.UseRouting();
+            app.UseStaticFiles();
 
-            app.UseAuthorization();
+            app.UseHttpMetrics();
 
-            app.UseEndpoints(endpoints =>
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                endpoints.MapControllers();
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Cities API V1");
+                c.RoutePrefix = "api";
+                c.EnableDeepLinking();
+                c.EnableFilter();
+                //c.InjectJavascript("https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js");
+                //c.InjectJavascript("/js/swagger.js");
+                //c.InjectStylesheet("/css/swagger.css");
             });
+
+            app.UseEndpoints(e => {
+                e.MapControllers();
+                e.MapMetrics();
+            });
+
+            app.UseHealthChecks("/health");
         }
     }
 }

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Prometheus;
 using System.IO;
 using System.Reflection;
+using CitiesApi.Services;
 
 namespace CitiesApi
 {
@@ -38,6 +39,7 @@ namespace CitiesApi
                 c.IncludeXmlComments(xmlPath);
             });
             services.AddHealthChecks();
+            services.AddSingleton<ICensusService, CensusService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

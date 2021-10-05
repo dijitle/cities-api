@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CitiesApi.Models
@@ -15,7 +16,9 @@ namespace CitiesApi.Models
         public int Population { get; set; }
         public StateRegion Region { get; set; }
         public StateDivision Division { get; set; }
+        [JsonIgnore]
         public List<County> Counties { get; set; } = new List<County>();
+        [JsonIgnore]
         public List<Place> Places { get; set; } = new List<Place>();
 
         public override string ToString()

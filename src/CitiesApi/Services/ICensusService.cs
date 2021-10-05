@@ -7,6 +7,7 @@ namespace CitiesApi.Services
     {
         List<County> Counties { get; set; }
         List<Place> Places { get; set; }
+        List<Place> Townships { get; set; }
         List<State> States { get; set; }
     }
 }

@@ -20,6 +20,8 @@ namespace CitiesApi.Models
         public List<County> Counties { get; set; } = new List<County>();
         [JsonIgnore]
         public List<Place> Places { get; set; } = new List<Place>();
+        [JsonIgnore]
+        public List<Place> Townships { get; set; } = new List<Place>();
 
         public override string ToString()
         {

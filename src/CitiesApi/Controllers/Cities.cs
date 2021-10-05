@@ -23,11 +23,13 @@ namespace CitiesApi.Controllers
         }
 
         [HttpGet()]
-        [Route("hello")]
+        [Route("city")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<Place>>> GetCity(string name)
+        public async Task<ActionResult<IEnumerable<string>>> GetCity(string name)
         {
-            return Ok(_census.Places.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim()));
+            var places = _census.Places.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim());
+            var townships = _census.Townships.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim() + " township");
+            return Ok(places.Union(townships).Select(p => $"{p.Name}, {p.State.Abbreviation} - {p.Lat}, {p.Lon} - {p.Population}"));
         }
 
         

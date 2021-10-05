@@ -13,6 +13,7 @@ namespace CitiesApi.Services
         public List<State> States { get; set; } = new List<State>();
         public List<County> Counties { get; set; } = new List<County>();
         public List<Place> Places { get; set; } = new List<Place>();
+        public List<Place> Townships { get; set; } = new List<Place>();
 
         public CensusService()
         {
@@ -34,6 +35,7 @@ namespace CitiesApi.Services
                 }
             }
         }
+
         private void ParseFiles(StreamReader rdr)
         {
             var stateLine = rdr.ReadLine().Split("|");
@@ -61,7 +63,7 @@ namespace CitiesApi.Services
                 {
                     var c = new County
                     {
-                        Id = line[14],
+                        Id = line[16],
                         Name = line[86],
                         Population = Convert.ToInt32(line[90]),
                         Lat = Convert.ToDouble(line[92]),
@@ -71,12 +73,35 @@ namespace CitiesApi.Services
                     Counties.Add(c);
                     s.Counties.Add(c);
                 }
+                else if (line[2] == "060")
+                {
+                    var p = new Place
+                    {
+                        Id = line[19],
+                        Name = line[86] + " Township",
+                        Classification = line[87].Split(" ").Last(),
+                        Population = Convert.ToInt32(line[90]),
+                        Lat = Convert.ToDouble(line[92]),
+                        Lon = Convert.ToDouble(line[93]),
+                        State = s,
+                        Counties = new List<County>() { Counties.Single(c => c.Id == line[16]) }
+                    };
+
+                    s.Townships.Add(p);
+                    Townships.Add(p);
+                }
                 else if (line[2] == "155")
                 {
-                    countyPlaceJoin.Add(new KeyValuePair<string, string>(line[14], line[31]));
+                    countyPlaceJoin.Add(new KeyValuePair<string, string>(line[16], line[31]));
                 }
                 else if (line[2] == "160")
                 {
+                    if (s.Townships.Any(p => p.Id == line[31]))
+                    {
+                        s.Townships.RemoveAll(t => t.Id == line[31]);
+                        Townships.RemoveAll(t => t.Id == line[31]);
+                    }
+
                     var p = new Place
                     {
                         Id = line[31],

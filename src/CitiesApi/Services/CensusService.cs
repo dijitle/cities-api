@@ -75,10 +75,20 @@ namespace CitiesApi.Services
                 }
                 else if (line[2] == "060")
                 {
+                    if(line[90] == "0" ||
+                       line[87].Split(" ").First().ToLower() == "township" ||
+                       line[87].Split(" ").First().ToLower() == "district" ||
+                       line[87].Split(" ").Last().ToLower() == "borough" ||
+                       line[87].Split(" ").Last().ToLower() == "ccd" || 
+                       line[87].Split(" ").Last().ToLower() == "cdp")
+                    {
+                        continue;
+                    }
+
                     var p = new Place
                     {
                         Id = line[19],
-                        Name = line[86] + " Township",
+                        Name = line[86],
                         Classification = line[87].Split(" ").Last(),
                         Population = Convert.ToInt32(line[90]),
                         Lat = Convert.ToDouble(line[92]),
@@ -89,6 +99,7 @@ namespace CitiesApi.Services
 
                     s.Townships.Add(p);
                     Townships.Add(p);
+                    Counties.Single(c => c.Id == line[16]).Townships.Add(p);
                 }
                 else if (line[2] == "155")
                 {
@@ -96,17 +107,24 @@ namespace CitiesApi.Services
                 }
                 else if (line[2] == "160")
                 {
-                    if (s.Townships.Any(p => p.Id == line[31]))
+                    if (s.Townships.Any(t => t.Id == line[31]) || 
+                       s.Townships.Any(t => t.Name == line[86] && t.Population == Convert.ToInt32(line[90])))
                     {
                         s.Townships.RemoveAll(t => t.Id == line[31]);
                         Townships.RemoveAll(t => t.Id == line[31]);
+                        s.Townships.RemoveAll(t => t.Name == line[86] && t.Population == Convert.ToInt32(line[90]));
+                        Townships.RemoveAll(t => t.Name == line[86] && t.Population == Convert.ToInt32(line[90]));
                     }
 
                     var p = new Place
                     {
                         Id = line[31],
-                        Name = line[86],
-                        Classification = line[87].Split(" ").Last(),
+                        Name = line[86].Split(" ").Last().ToLower() == "(balance)" || 
+                               line[86].Split(" ").Last().ToLower() == "(county)" || 
+                               line[86].Split(" ").Last().ToLower() == "county" ? line[86].Split(" ").First().Split("/").First().Split("-").First() : line[86],
+                        Classification = line[86].Split(" ").Last().ToLower() == "(balance)" || 
+                                         line[86].Split(" ").Last().ToLower() == "(county)" ||
+                                         line[86].Split(" ").Last().ToLower() == "county" ? "city*" : line[87].Split(" ").Last(),
                         Population = Convert.ToInt32(line[90]),
                         Lat = Convert.ToDouble(line[92]),
                         Lon = Convert.ToDouble(line[93]),
@@ -130,6 +148,26 @@ namespace CitiesApi.Services
 
                 c.Places.Add(p);
                 p.Counties.Add(c);
+            }
+
+            if(s.Places.GroupBy(p => new { p.Name, p.County }).Any(g => g.Count() > 1))
+            {
+                var groups = s.Places.GroupBy(p => new { p.Name, p.County }).Where(g => g.Count() > 1);
+
+                foreach(var g in groups)
+                {
+                    var dupPlaces = g.Select(c => c).ToList();
+
+                    dupPlaces.First().Classification = string.Join('/', dupPlaces.Select(p => p.Classification));
+                    dupPlaces.First().Population = dupPlaces.Sum(p => p.Population);
+
+                    for(int i = 1; i < dupPlaces.Count(); i++)
+                    {
+                        Places.Remove(dupPlaces[i]);
+                        s.Places.Remove(dupPlaces[i]);
+                    }
+                }
+                
             }
         }
     }

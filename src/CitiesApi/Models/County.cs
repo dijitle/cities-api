@@ -16,6 +16,8 @@ namespace CitiesApi.Models
         public int Population { get; set; }
         [JsonIgnore]
         public List<Place> Places { get; set; } = new List<Place>();
+        [JsonIgnore]
+        public List<Place> Townships { get; set; } = new List<Place>();
         public State State { get; set; }
 
         public override string ToString()

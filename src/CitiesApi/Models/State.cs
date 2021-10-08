@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using static CitiesApi.Models.StateData;
 
 namespace CitiesApi.Models
 {
@@ -14,6 +15,13 @@ namespace CitiesApi.Models
         public double Lat { get; set; }
         public double Lon { get; set; }
         public int Population { get; set; }
+        [JsonIgnore]
+        public Place Capital { 
+            get
+            {
+                return Places.Single(p => p.Name == StateCaptials[Name]);
+            }
+        }
         public StateRegion Region { get; set; }
         public StateDivision Division { get; set; }
         [JsonIgnore]
@@ -26,29 +34,6 @@ namespace CitiesApi.Models
         public override string ToString()
         {
             return Name;
-        }
-
-        public enum StateRegion
-        {
-            Northeast = 1,
-            Midwest = 2,
-            South = 3,
-            West = 4,
-            Puerto_Rico = 9
-        }
-
-        public enum StateDivision
-        {
-            Puerto_Rico = 0,
-            New_England = 1,
-            Middle_Atlantic = 2,
-            East_North_Central = 3,
-            West_North_Central = 4,
-            South_Atlantic = 5,
-            East_South_Central = 6,
-            West_South_Central = 7,
-            Mountain = 8,
-            Pacific = 9
         }
     }
 }

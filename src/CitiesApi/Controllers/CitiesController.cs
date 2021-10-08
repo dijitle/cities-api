@@ -35,6 +35,14 @@ namespace CitiesApi.Controllers
         }
 
         [HttpGet()]
+        [Route("captial")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<Place>> GetCaptial(string name)
+        {
+            return Ok(_census.States.Single(s => s.Name.ToLower() == name.ToLower().Trim()).Capital);
+        }
+
+        [HttpGet()]
         [Route("cityPop")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<string>>> GetCityPopulation(int minPop = 100000)

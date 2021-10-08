@@ -48,8 +48,8 @@ namespace CitiesApi.Services
                 Population = Convert.ToInt32(stateLine[90]),
                 Lat = Convert.ToDouble(stateLine[92]),
                 Lon = Convert.ToDouble(stateLine[93]),
-                Region = (State.StateRegion)Enum.Parse(typeof(State.StateRegion), stateLine[10]),
-                Division = (State.StateDivision)Enum.Parse(typeof(State.StateDivision), stateLine[11])
+                Region = (StateData.StateRegion)Enum.Parse(typeof(StateData.StateRegion), stateLine[10]),
+                Division = (StateData.StateDivision)Enum.Parse(typeof(StateData.StateDivision), stateLine[11])
             };
 
             States.Add(s);

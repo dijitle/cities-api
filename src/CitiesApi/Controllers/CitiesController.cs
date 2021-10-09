@@ -25,21 +25,67 @@ namespace CitiesApi.Controllers
         [HttpGet()]
         [Route("city")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<string>>> GetCity(string name, bool includeTownships = false)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<Place>>> GetCity(string name, string stateName, bool includeTownships = false)
+        {
+            await _census.GetData();
+
+            State state = null;
+
+            if (! string.IsNullOrEmpty(stateName))
+            {
+                state = _census.States.SingleOrDefault(s => s.Name.ToLower() == stateName.ToLower().Trim());
+
+                if (state == null)
+                {
+                    return NotFound($"State '{state}' was not found!");
+                }
+            }
+
+            Func<Place, bool> search = p => p.Name.ToLower().Trim() == name.ToLower().Trim() || p.AltName.ToLower().Trim() == name.ToLower().Trim();
+
+            var cities = state == null ? _census.Places.Where(search) : state.Places.Where(search);
+
+            if (includeTownships)
+            {
+                var townships = state == null ? _census.Townships.Where(search) : state.Townships.Where(search);
+                var places = cities.Union(townships);
+
+                if (places.Any())
+                {
+                    return Ok(places);
+                }
+
+                return NotFound($"Could not find place with name '{name}'");
+            }
+
+            if (cities.Any())
+            {
+                return Ok(cities);
+            }
+
+            return NotFound($"Could not find place with name '{name}'");
+        }
+
+        [HttpGet()]
+        [Route("cities")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<Place>>> GetCities(string name, bool includeTownships = false)
         {
             var cities = _census.Places.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim() || p.AltName.ToLower().Trim() == name.ToLower().Trim());
             var townships = _census.Townships.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim() || p.AltName.ToLower().Trim() == name.ToLower().Trim());
 
             var places = includeTownships ? cities : cities.Union(townships);
-            return Ok(places.Select(p => $"{p.Name} ({p.Classification}), {p.State.Abbreviation} - {p.County} - {p.Lat}, {p.Lon} - {p.Population}"));
+            return Ok(places);
         }
 
         [HttpGet()]
         [Route("captial")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<Place>> GetCaptial(string name)
+        public async Task<ActionResult<Place>> GetCaptial(string stateName)
         {
-            return Ok(_census.States.Single(s => s.Name.ToLower() == name.ToLower().Trim()).Capital);
+            return Ok(_census.States.Single(s => s.Name.ToLower() == stateName.ToLower().Trim()).Capital);
         }
 
         [HttpGet()]

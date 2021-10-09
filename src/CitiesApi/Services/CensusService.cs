@@ -5,19 +5,25 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace CitiesApi.Services
 {
     public class CensusService : ICensusService
     {
-        public List<State> States { get; set; } = new List<State>();
-        public List<County> Counties { get; set; } = new List<County>();
-        public List<Place> Places { get; set; } = new List<Place>();
-        public List<Place> Townships { get; set; } = new List<Place>();
+        public IEnumerable<State> States { get; set; } = null;
+        public IEnumerable<County> Counties { get; set; } = null;
+        public IEnumerable<Place> Places { get; set; } = null;
+        public IEnumerable<Place> Townships { get; set; } = null;
 
-        public CensusService()
+        public async Task GetData()
         {
-            foreach (var stateFile in Directory.GetFiles("../../data"))
+            if (States != null)
+            {
+                return;
+            }
+
+            var stateTasks = Directory.GetFiles("../../data").Select(async stateFile =>
             {
                 using (ZipArchive za = ZipFile.OpenRead(stateFile))
                 {
@@ -27,18 +33,26 @@ namespace CitiesApi.Services
                         {
                             using (StreamReader rdr = new StreamReader(entry.Open()))
                             {
-                                ParseFiles(rdr);
+                                return await ParseFiles(rdr);
                             }
                         }
 
                     }
                 }
-            }
+
+                return null;
+            });
+
+            States = await Task.WhenAll(stateTasks);
+
+            Counties = States.SelectMany(s => s.Counties);
+            Places = States.SelectMany(s => s.Places);
+            Townships = States.SelectMany(s => s.Townships);
         }
 
-        private void ParseFiles(StreamReader rdr)
+        private async Task<State> ParseFiles(StreamReader rdr)
         {
-            var stateLine = rdr.ReadLine().Split("|");
+            var stateLine = (await rdr.ReadLineAsync()).Split("|");
 
             var s = new State
             {
@@ -52,13 +66,11 @@ namespace CitiesApi.Services
                 Division = (StateData.StateDivision)Enum.Parse(typeof(StateData.StateDivision), stateLine[11])
             };
 
-            States.Add(s);
-
             var countyPlaceJoin = new List<KeyValuePair<string, string>>();
 
             while (!rdr.EndOfStream)
             {
-                var line = rdr.ReadLine().Split("|");
+                var line = (await rdr.ReadLineAsync()).Split("|");
                 if (line[2] == "050")
                 {
                     var c = new County
@@ -70,7 +82,6 @@ namespace CitiesApi.Services
                         Lon = Convert.ToDouble(line[93]),
                         State = s
                     };
-                    Counties.Add(c);
                     s.Counties.Add(c);
                 }
                 else if (line[2] == "060")
@@ -94,12 +105,11 @@ namespace CitiesApi.Services
                         Lat = Convert.ToDouble(line[92]),
                         Lon = Convert.ToDouble(line[93]),
                         State = s,
-                        Counties = new List<County>() { Counties.Single(c => c.Id == line[16]) }
+                        Counties = new List<County>() { s.Counties.Single(c => c.Id == line[16]) }
                     };
 
                     s.Townships.Add(p);
-                    Townships.Add(p);
-                    Counties.Single(c => c.Id == line[16]).Townships.Add(p);
+                    s.Counties.Single(c => c.Id == line[16]).Townships.Add(p);
                 }
                 else if (line[2] == "155")
                 {
@@ -111,9 +121,7 @@ namespace CitiesApi.Services
                        s.Townships.Any(t => t.Name == line[86] && t.Population == Convert.ToInt32(line[90])))
                     {
                         s.Townships.RemoveAll(t => t.Id == line[31]);
-                        Townships.RemoveAll(t => t.Id == line[31]);
                         s.Townships.RemoveAll(t => t.Name == line[86] && t.Population == Convert.ToInt32(line[90]));
-                        Townships.RemoveAll(t => t.Name == line[86] && t.Population == Convert.ToInt32(line[90]));
                     }
 
                     var p = new Place
@@ -132,7 +140,6 @@ namespace CitiesApi.Services
                     };
 
                     s.Places.Add(p);
-                    Places.Add(p);
                 }
                 else if (Convert.ToInt32(line[2]) > 160)
                 {
@@ -163,12 +170,13 @@ namespace CitiesApi.Services
 
                     for(int i = 1; i < dupPlaces.Count(); i++)
                     {
-                        Places.Remove(dupPlaces[i]);
                         s.Places.Remove(dupPlaces[i]);
                     }
                 }
                 
             }
+
+            return s;
         }
     }
 }

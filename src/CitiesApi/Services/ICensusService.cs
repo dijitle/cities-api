@@ -1,13 +1,15 @@
 ﻿using CitiesApi.Models;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CitiesApi.Services
 {
     public interface ICensusService
     {
-        List<County> Counties { get; set; }
-        List<Place> Places { get; set; }
-        List<Place> Townships { get; set; }
-        List<State> States { get; set; }
+        IEnumerable<County> Counties { get; set; }
+        IEnumerable<Place> Places { get; set; }
+        IEnumerable<Place> Townships { get; set; }
+        IEnumerable<State> States { get; set; }
+        Task GetData();
     }
 }

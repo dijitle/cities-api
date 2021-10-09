@@ -21,6 +21,14 @@ namespace CitiesApi.Models
                 return Name.Replace("St.", "Saint").Replace("Urban ", "");
             } 
         }
+        public bool IsCapital
+        {
+            get
+            {
+                return State.Capital == this;
+            }
+        }
+
         public double Lat { get; set; }
         public double Lon { get; set; }
         public int Population { get; set; }

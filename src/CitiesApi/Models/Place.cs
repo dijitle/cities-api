@@ -10,17 +10,7 @@ namespace CitiesApi.Models
     {
         public string Id { get; set; }
         public string Name { get; set; }
-        public string AltName { 
-            get
-            {
-                if (Name.Contains("("))
-                {
-                    return Name.Substring(Name.IndexOf("("), Name.IndexOf(")") - Name.IndexOf("("));
-                }
-
-                return Name.Replace("St.", "Saint").Replace("Urban ", "");
-            } 
-        }
+        public string AltName { get; set; }
         public bool IsCapital
         {
             get

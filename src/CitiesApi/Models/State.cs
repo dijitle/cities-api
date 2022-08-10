@@ -19,7 +19,7 @@ namespace CitiesApi.Models
         public Place Capital { 
             get
             {
-                return Places.Single(p => p.Name == StateCaptials[Name]);
+                return Places.Single(p => p.Name == StateCaptials[Name] || p.AltName == StateCaptials[Name]);
             }
         }
         public StateRegion Region { get; set; }

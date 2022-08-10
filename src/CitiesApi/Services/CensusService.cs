@@ -100,6 +100,7 @@ namespace CitiesApi.Services
                     {
                         Id = line[19],
                         Name = line[86],
+                        AltName = StateData.GetAltName(line[86]),
                         Classification = line[87].Split(" ").Last(),
                         Population = Convert.ToInt32(line[90]),
                         Lat = Convert.ToDouble(line[92]),
@@ -130,6 +131,7 @@ namespace CitiesApi.Services
                         Name = line[86].Split(" ").Last().ToLower() == "(balance)" || 
                                line[86].Split(" ").Last().ToLower() == "(county)" || 
                                line[86].Split(" ").Last().ToLower() == "county" ? line[86].Split(" ").First().Split("/").First().Split("-").First() : line[86],
+                        AltName = StateData.GetAltName(line[86]),
                         Classification = line[86].Split(" ").Last().ToLower() == "(balance)" || 
                                          line[86].Split(" ").Last().ToLower() == "(county)" ||
                                          line[86].Split(" ").Last().ToLower() == "county" ? "city*" : line[87].Split(" ").Last(),

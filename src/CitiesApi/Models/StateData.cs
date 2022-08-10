@@ -58,9 +58,21 @@ namespace CitiesApi.Models
             {"Washington", "Olympia"},
             {"West Virginia", "Charleston"},
             {"Wisconsin", "Madison"},
-            {"Wyoming", "Cheyenne"}
+            {"Wyoming", "Cheyenne"},
+            {"District of Columbia", "Washington"}
         };
 
+        public static string GetAltName(string name)
+        {
+            if (name.Contains("("))
+            {
+                return name.Substring(name.IndexOf("("), name.IndexOf(")") - name.IndexOf("("));
+            }
+
+            return name.Replace("St.", "Saint")
+                       .Replace("Urban ", "")
+                       .Replace("Boise City", "Boise");
+        }
 
         public enum StateRegion
         {

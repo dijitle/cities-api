@@ -34,7 +34,7 @@ namespace CitiesApi.Controllers
 
             if (! string.IsNullOrEmpty(stateName))
             {
-                state = _census.States.SingleOrDefault(s => s.Name.ToLower() == stateName.ToLower().Trim());
+                state = _census.States.SingleOrDefault(s => s.Name.ToLower() == stateName.ToLower().Trim() || s.Abbreviation.ToLower() == stateName.ToLower().Trim());
 
                 if (state == null)
                 {
@@ -73,6 +73,8 @@ namespace CitiesApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<Place>>> GetCities(string name, bool includeTownships = false)
         {
+            await _census.GetData();
+
             var cities = _census.Places.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim() || p.AltName.ToLower().Trim() == name.ToLower().Trim());
             var townships = _census.Townships.Where(p => p.Name.ToLower().Trim() == name.ToLower().Trim() || p.AltName.ToLower().Trim() == name.ToLower().Trim());
 
@@ -81,21 +83,114 @@ namespace CitiesApi.Controllers
         }
 
         [HttpGet()]
+        [Route("state")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<State>>> GetState(string stateName)
+        {
+            await _census.GetData();
+
+            State state = null;
+
+            if (!string.IsNullOrEmpty(stateName))
+            {
+                state = _census.States.SingleOrDefault(s => s.Name.ToLower() == stateName.ToLower().Trim() || s.Abbreviation.ToLower() == stateName.ToLower().Trim());
+
+                if (state == null)
+                {
+                    return NotFound($"State '{state}' was not found!");
+                }
+            }
+
+            return Ok(state);
+        }
+
+        [HttpGet()]
+        [Route("states")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<State>>> GetStates()
+        {
+            await _census.GetData();
+
+            return Ok(_census.States);
+        }
+
+        [HttpGet()]
+        [Route("statesCount")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<int>> GetStatesCount()
+        {
+            await _census.GetData();
+
+            return Ok(_census.States.Count());
+        }
+
+        [HttpGet()]
         [Route("captial")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<Place>> GetCaptial(string stateName)
         {
-            return Ok(_census.States.Single(s => s.Name.ToLower() == stateName.ToLower().Trim()).Capital);
+            await _census.GetData();
+
+            return Ok(_census.States.Single(s => s.Name.ToLower() == stateName.ToLower().Trim() || s.Abbreviation.ToLower() == stateName.ToLower().Trim()).Capital);
         }
 
         [HttpGet()]
-        [Route("cityPop")]
+        [Route("county")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<string>>> GetCityPopulation(int minPop = 100000)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<County>>> GetCounty(string countyName)
         {
+            await _census.GetData();
+
+            County county = null;
+
+            if (!string.IsNullOrEmpty(countyName))
+            {
+                county = _census.Counties.SingleOrDefault(c => c.Name.ToLower() == countyName.ToLower().Trim());
+
+                if (county == null)
+                {
+                    return NotFound($"County '{county}' was not found!");
+                }
+            }
+
+            return Ok(county);
+        }
+
+        [HttpGet()]
+        [Route("counties")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<County>>> GetCounties()
+        {
+            await _census.GetData();
+
+            return Ok(_census.Counties);
+        }
+
+        [HttpGet()]
+        [Route("countiesCount")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<int>> GetCountiesCount()
+        {
+            await _census.GetData();
+
+            return Ok(_census.Counties.Count());
+        }
+
+        [HttpGet()]
+        [Route("citiesPop")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<int>> GetCitiesPopulation(int minPop = 100000)
+        {
+            await _census.GetData();
+
             var places = _census.Places.Where(p => p.Population > minPop);
             var townships = _census.Townships.Where(p => p.Population > minPop);
-            return Ok(places.OrderByDescending(c => c.Population).Select(p => $"{p.Name} [{p.Classification}], {p.State.Abbreviation} - {p.County} - {p.Lat}, {p.Lon} - {p.Population}"));
+            return Ok(places.Count() + townships.Count());
         }
 
 
@@ -104,6 +199,8 @@ namespace CitiesApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<string>>> GetCountyStatePopulation()
         {
+            await _census.GetData();
+
             var states = new List<string>();
             var total = 0;
 
@@ -120,12 +217,25 @@ namespace CitiesApi.Controllers
             return Ok(states);
         }
 
+        [HttpGet()]
+        [Route("placeendincity")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<string>>> getplacesendingincity()
+        {
+            await _census.GetData();
+
+
+            return Ok(_census.Places.Sum(p => p.Population ) + _census.Townships.Sum(t => t.Population));
+        }
+
 
         [HttpGet()]
         [Route("countyPop")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<string>>> GetCountyPopulation()
         {
+            await _census.GetData();
+
             var states = new List<string>();
             var total = 0;
 
@@ -149,7 +259,7 @@ namespace CitiesApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<string>>> GetTownshipClassification()
         {
-
+            await _census.GetData();
             return Ok(_census.Townships.Select(t => t.Classification).Distinct());
         }
 
